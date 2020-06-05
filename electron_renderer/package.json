@@ -21,6 +21,7 @@
     "start": "cross-env BROWSER=none NODE_PATH=./src react-scripts start",
     "build": "NODE_PATH=./src react-scripts build",
     "test": "react-scripts test",
+    "test": "react-scripts test ./src/",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
