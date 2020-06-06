@@ -1,51 +1,56 @@
 import React from 'react';
-import logo from './logo.svg';
+
+import { decksUsedSheetHeader, currentMonthSheetHeader } from '../constants/sheets-headers';
+import { fetchSheetByTitle } from '../modules/spreadheetHandling/fetchSheetByTitle';
+import { setHeaderOfSheet } from '../modules/spreadheetHandling/setHeaderOfSheet';
+import { fetchMainDocument } from '../modules/spreadheetHandling/fetchMainDocument';
+
+import { decksSheetTitle, currentMonthSheetTitle } from '../constants/sheets-titles';
+import { createNewSheetWithInfos } from '../modules/spreadheetHandling/createNewSheetWithInfos';
+
+import { DeckSelection } from '../panels/DeckSelection/DeckSelection';
 import './App.scss';
 
-const { GoogleSpreadsheet } = require('google-spreadsheet');
+import { useAsync } from 'react-async';
 
-const accessSpreadsheet = async () => {
-    const requiredDoc = new GoogleSpreadsheet(process.env.REACT_APP_SPREADSHEET_URL_ID);
-    
-    // If not working, see: https://github.com/theoephraim/node-google-spreadsheet/issues/117
-    requiredDoc.useServiceAccountAuth({
-        client_email: process.env.REACT_APP_GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.REACT_APP_GOOGLE_SERVICE_PRIVATE_KEY,
-    });
+const initSpreadsheet = async () => {
+    const requiredDoc = await fetchMainDocument();
 
-    await requiredDoc.loadInfo(); // loads document properties and worksheets
-    
-    console.log(requiredDoc.sheetsByIndex.map((doc: { title: string; }) => doc.title).includes("Decks"));
-    // await requiredDoc.updateProperties({ title: 'Eternal Climbing' });
-    
-    // const sheet = requiredDoc.sheetsByIndex[0]; // or use doc.sheetsById[id]
-    // console.log(sheet.title);
-    // console.log(sheet.rowCount);
-    // const rows = await sheet.getRows();
-    // console.log(rows);
-    // await rows[1].delete(); // delete a row
+    const sheetsToInitWithInfos = [
+        {
+            title: decksSheetTitle,
+            headers: decksUsedSheetHeader
+        },
+        {
+            title: currentMonthSheetTitle(),
+            headers: currentMonthSheetHeader
+        }
+    ];
+
+    sheetsToInitWithInfos.forEach(
+        ({title, headers}) => {
+            const sheetToInit = fetchSheetByTitle(requiredDoc, title);
+
+            if(sheetToInit == null) {
+                console.log(`${title} didnt exist, creating`);
+                createNewSheetWithInfos(requiredDoc, title, headers);
+            } else {
+                console.log(`${title} exists, formatting`);
+                setHeaderOfSheet(sheetToInit, headers);
+            }
+        }
+    );
 }
 
-
 const App = () => {
-    accessSpreadsheet();
+    
+    const { error, isLoading } = useAsync({ promiseFn: initSpreadsheet })
+    if (isLoading) return <div>{"Loading..."}</div>
+    if (error) return <div>{`Something went wrong: ${error.message}`}</div>
+
     return (
-        <div className="App">
-            <header className="App-header">
-                <img src={logo} className="App-logo" alt="logo" />
-                <p>
-                    Re-edit <code>src/App.js</code> and save to reload.
-        </p>
-                <a
-                    className="App-link"
-                    href="https://reactjs.org"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Learn React
-        </a>
-            </header>
-        </div>
+        <DeckSelection />
+        // <div>Whatever</div>
     );
 }
 
