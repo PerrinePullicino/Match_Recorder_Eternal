@@ -8,6 +8,6 @@
         "electron": "electron src"
     },
     "devDependencies": {
-        "electron": "^9.0.2"
+        "electron": "^9.4.0"
     }
 }
